@@ -6692,7 +6692,10 @@ class ComputeManager(manager.Manager):
         image_meta = compute_utils.get_image_metadata(
             context, self.image_api, image_ref, instance)
         self.driver.unquiesce(context, instance, image_meta)
-
+     
+    def get_vmware_vms(self,context):
+        return self.driver.get_vmware_vms(context)
+        
 
 # TODO(danms): This goes away immediately in Lemming and is just
 # present in Kilo so that we can receive v3.x and v4.0 messages
@@ -7003,3 +7006,6 @@ class _ComputeV4Proxy(object):
 
     def unquiesce_instance(self, ctxt, instance, mapping=None):
         return self.manager.unquiesce_instance(ctxt, instance, mapping=mapping)
+    
+    def get_vmware_vms(self,ctxt):
+        return self.manager.get_vmware_vms(ctxt)

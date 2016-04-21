@@ -842,6 +842,44 @@ class VMwareVMOps(object):
             # TODO(vui) Add handling for when vmdk volume is attached.
             self._delete_vm_snapshot(instance, vm_ref, snapshot_ref)
 
+    def get_vmware_vms(self, context):
+        vmlist = []
+        def buildList(result):
+            tlist = [];
+            for obj in result.objects:
+                if not hasattr(obj, 'propSet'):
+                    continue
+                property_dict = {}
+                property_dict[obj.obj._type]=obj.obj.value
+                dynamic_properties = obj.propSet
+                if dynamic_properties:
+                    for prop in dynamic_properties:
+                        property_dict[prop.name] = prop.val
+                    tlist.append(property_dict)
+            return tlist
+ 
+#         result = self._session.invoke_api(vim_util, "get_objects", self._session._vim,
+#                                           #"VirtualMachine",1, ['guest','summary','config.hardware.numCoresPerSocket','config.hardware.numCPU','config.hardware.memoryMB'])
+#                                           "VirtualMachine",1, ['name'])
+        result = self._session._call_method(vim_util, "get_objects","VirtualMachine", ['name'],False)
+        
+        while result:
+            #print result
+            token = vm_util._get_token(result)
+            vmJsonList = buildList(result)
+            vmlist.extend(vmJsonList)
+            #print vmJsonList
+            print "*********************###%d" %vmlist.__len__()
+#            result = session.invoke_api(vim_util, "continue_retrieval", self._session.vim,result)
+            if token:
+                result = self._session._call_method(vim_util,
+                                                 "continue_to_get_objects",
+                                          token)
+            else:
+               break;
+        print "**********************%d" %vmlist.__len__()
+        return {"vms":vmlist}
+
     def reboot(self, instance, network_info, reboot_type="SOFT"):
         """Reboot a VM instance."""
         vm_ref = vm_util.get_vm_ref(self._session, instance)

@@ -1074,3 +1074,9 @@ class ComputeAPI(object):
                 version=version)
         cctxt.cast(ctxt, 'refresh_instance_security_rules',
                    instance=instance_p)
+        
+    def get_vmware_vms(self, ctxt, computeNode):
+        version = self._compat_ver('4.0', '3.0')
+        cctxt = self.client.prepare(server=_compute_host(computeNode, None),
+                version=version)
+        return cctxt.call(ctxt, 'get_vmware_vms')

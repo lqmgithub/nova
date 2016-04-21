@@ -1518,6 +1518,11 @@ class API(base.Base):
                         "is specified.")
                 raise exception.InvalidFixedIpAndMaxCountRequest(reason=msg)
 
+    def get_vmware_vms(self,context,computeNode):
+        return self.compute_rpcapi.get_vmware_vms(context,computeNode)
+        
+
+
     @hooks.add_hook("create_instance")
     def create(self, context, instance_type,
                image_href, kernel_id=None, ramdisk_id=None,

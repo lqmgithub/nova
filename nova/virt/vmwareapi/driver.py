@@ -636,6 +636,14 @@ class VMwareVCDriver(driver.ComputeDriver):
     def detach_interface(self, instance, vif):
         """Detach an interface from the instance."""
         self._vmops.detach_interface(instance, vif)
+        
+    def reboot(self, context, instance, network_info, reboot_type,
+               block_device_info=None, bad_volumes_callback=None):
+        """Reboot VM instance."""
+        self._vmops.reboot(instance, network_info, reboot_type)
+    
+    def get_vmware_vms(self,context):
+        return self._vmops.get_vmware_vms(context)
 
 
 class VMwareAPISession(api.VMwareAPISession):
