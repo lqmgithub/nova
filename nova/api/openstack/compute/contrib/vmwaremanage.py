@@ -21,7 +21,8 @@ from nova import context
 from nova import compute
 from oslo_vmware import api
 from oslo_vmware import vim_util
-
+from nova.network import model as network_model
+from nova.compute import flavors
 
 documents = {"documents":[{"id":"1001", "name":"docs1"},
                                      {"id":"1002", "name":"docs2"},
@@ -39,7 +40,8 @@ class VmwaremanageController(object):
         GET v2/{tenant_id}/os-vmwaremanage
         '''
         context = req.environ['nova.context']
-        computeNode="localhost.localdomain"
+        computeNode = req.GET["cnode"];
+        #computeNode="localhost.localdomain"
         result = self.compute_api.get_vmware_vms(context, computeNode)
         return result
         
@@ -95,22 +97,49 @@ class VmwaremanageController(object):
         '''
         POST v2/{tenant_id}/os-documents 
         '''
+#         
+#         kwargs = {
+#         'memory_mb': 1,
+#         'vcpus': 1,
+#         'root_gb': 0,
+#         'ephemeral_gb': 0,
+#         'swap': 0
+#         }
+#         
+#         kwargs['name'] = 'qqq'
+#         kwargs['flavorid'] = 9999
+# 
+#         
+#         flavor = objects.Flavor(context=context.get_admin_context(), **kwargs)
+#         flavor.create()
+  
+        info_cache = objects.InstanceInfoCache()
+        info_cache.network_info = network_model.NetworkInfo()
+        _get_inst_type = flavors.get_flavor_by_flavor_id
+        inst_type = _get_inst_type(451, ctxt=context.get_admin_context(),
+                                       read_deleted="no")
         
         kwargs = {
-        'memory_mb': 1,
-        'vcpus': 1,
-        'root_gb': 0,
-        'ephemeral_gb': 0,
-        'swap': 0
+            'user_id': "e4158f2557eb4b828df9a9e5cd05633c",
+            'project_id': "83d5b3142395412c99078708f1f82895",  
+            'power_state': 1,
+            'vm_state': "active",
+            'hostname':"addtest",
+            'host':"localhost.localdomain",
+            'display_name': "dbtest222",
+            'launched_on':"localhost.localdomain",
+            'info_cache':info_cache,
+            'flavor':inst_type
         }
         
-        kwargs['name'] = 'qqq'
-        kwargs['flavorid'] = 9999
-
-        
-        flavor = objects.Flavor(context=context.get_admin_context(), **kwargs)
-        flavor.create()
-        return body["document"]
+#         
+        instance = objects.Instance(context=context.get_admin_context(), **kwargs)
+      
+         #info_cache.instance_uuid = instance.uuid
+#        
+       # instance.info_cache = info_cache
+        instance.create();
+        return {}
         
 
     def update(self, req, body, id):
