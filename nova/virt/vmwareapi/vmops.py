@@ -882,9 +882,9 @@ class VMwareVMOps(object):
     
     def manage_vmware_vms(self, context,intanceUuid,vmMorVal):
         client_factory = self._session.vim.client.factory
-        managedObjectReference = client_factory.create('ns0:ManagedObjectReference')
-        managedObjectReference._type = "VirtualMachine"
-        managedObjectReference.value = vmMorVal
+        vm_ref = client_factory.create('ns0:ManagedObjectReference')
+        vm_ref._type = "VirtualMachine"
+        vm_ref.value = vmMorVal
         config_spec = client_factory.create('ns0:VirtualMachineConfigSpec')
         config_spec.instanceUuid = intanceUuid
         managed_by = client_factory.create('ns0:ManagedByInfo')
@@ -892,7 +892,12 @@ class VMwareVMOps(object):
         managed_by.type = constants.EXTENSION_TYPE_INSTANCE
         config_spec.managedBy = managed_by
         reset_task = self._session._call_method(self._session.vim,
-                                                    "ReconfigVM_Task", managedObjectReference,spec=config_spec) 
+                                                    "ReconfigVM_Task", vm_ref,spec=config_spec) 
+        
+        port = vm_util.get_vnc_port(self._session)
+        vnc_config_spec = vm_util.get_vnc_config_spec(client_factory, port)
+        vm_util.reconfigure_vm(self._session, vm_ref, vnc_config_spec)
+        
         return {}
 
     def reboot(self, instance, network_info, reboot_type="SOFT"):
