@@ -6695,7 +6695,9 @@ class ComputeManager(manager.Manager):
      
     def get_vmware_vms(self,context):
         return self.driver.get_vmware_vms(context)
-        
+    
+    def manage_vmware_vms(self,context,intanceUuid,vmMorVal):
+        return self.driver.manage_vmware_vms(context,intanceUuid,vmMorVal) 
 
 # TODO(danms): This goes away immediately in Lemming and is just
 # present in Kilo so that we can receive v3.x and v4.0 messages
@@ -7009,3 +7011,6 @@ class _ComputeV4Proxy(object):
     
     def get_vmware_vms(self,ctxt):
         return self.manager.get_vmware_vms(ctxt)
+    
+    def manage_vmware_vms(self,ctxt,intanceUuid,vmMorVal):
+        return self.manager.manage_vmware_vms(ctxt,intanceUuid,vmMorVal) 

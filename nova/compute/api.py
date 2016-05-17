@@ -1520,7 +1520,9 @@ class API(base.Base):
 
     def get_vmware_vms(self,context,computeNode):
         return self.compute_rpcapi.get_vmware_vms(context,computeNode)
-        
+      
+    def manage_vmware_vms(self,context,computeNode,intanceUuid,vmMorVal):
+        return self.compute_rpcapi.manage_vmware_vms(context,computeNode,intanceUuid,vmMorVal)  
 
 
     @hooks.add_hook("create_instance")

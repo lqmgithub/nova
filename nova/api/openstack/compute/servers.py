@@ -646,7 +646,7 @@ class Controller(wsgi.Controller):
             server['server']['adminPass'] = password
 
         robj = wsgi.ResponseObject(server)
-
+        
         return self._add_location(robj)
 
     def _delete(self, context, req, instance_uuid):

@@ -879,6 +879,21 @@ class VMwareVMOps(object):
                break;
         print "**********************%d" %vmlist.__len__()
         return {"vms":vmlist}
+    
+    def manage_vmware_vms(self, context,intanceUuid,vmMorVal):
+        client_factory = self._session.vim.client.factory
+        managedObjectReference = client_factory.create('ns0:ManagedObjectReference')
+        managedObjectReference._type = "VirtualMachine"
+        managedObjectReference.value = vmMorVal
+        config_spec = client_factory.create('ns0:VirtualMachineConfigSpec')
+        config_spec.instanceUuid = intanceUuid
+        managed_by = client_factory.create('ns0:ManagedByInfo')
+        managed_by.extensionKey = constants.EXTENSION_KEY
+        managed_by.type = constants.EXTENSION_TYPE_INSTANCE
+        config_spec.managedBy = managed_by
+        reset_task = self._session._call_method(self._session.vim,
+                                                    "ReconfigVM_Task", managedObjectReference,spec=config_spec) 
+        return {}
 
     def reboot(self, instance, network_info, reboot_type="SOFT"):
         """Reboot a VM instance."""

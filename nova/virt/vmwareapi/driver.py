@@ -644,7 +644,10 @@ class VMwareVCDriver(driver.ComputeDriver):
     
     def get_vmware_vms(self,context):
         return self._vmops.get_vmware_vms(context)
-
+   
+    def manage_vmware_vms(self,context,intanceUuid,vmMorVal):
+        return self._vmops.manage_vmware_vms(context,intanceUuid,vmMorVal)
+    
 
 class VMwareAPISession(api.VMwareAPISession):
     """Sets up a session with the VC/ESX host and handles all

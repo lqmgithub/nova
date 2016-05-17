@@ -23,6 +23,7 @@ from oslo_vmware import api
 from oslo_vmware import vim_util
 from nova.network import model as network_model
 from nova.compute import flavors
+import datetime
 
 documents = {"documents":[{"id":"1001", "name":"docs1"},
                                      {"id":"1002", "name":"docs2"},
@@ -112,7 +113,8 @@ class VmwaremanageController(object):
 #         
 #         flavor = objects.Flavor(context=context.get_admin_context(), **kwargs)
 #         flavor.create()
-  
+        computeNode = req.GET["cnode"];
+        context2 = req.environ['nova.context']
         info_cache = objects.InstanceInfoCache()
         info_cache.network_info = network_model.NetworkInfo()
         _get_inst_type = flavors.get_flavor_by_flavor_id
@@ -126,19 +128,26 @@ class VmwaremanageController(object):
             'vm_state': "active",
             'hostname':"addtest",
             'host':"localhost.localdomain",
-            'display_name': "dbtest222",
+            'display_name': "qmtest3",
             'launched_on':"localhost.localdomain",
+             'memory_mb': 1024,
+             'vcpus': 2,
+             'root_gb': 0,
+             'ephemeral_gb': 0,
+             'availability_zone': 'nova',
+             'node':'domain-c2516(poolwudong)',
+             'launched_at':datetime.datetime.now(),
             'info_cache':info_cache,
             'flavor':inst_type
         }
         
-#         
-        instance = objects.Instance(context=context.get_admin_context(), **kwargs)
+        instance = objects.Instance(context.get_admin_context(), **kwargs)
       
-         #info_cache.instance_uuid = instance.uuid
-#        
-       # instance.info_cache = info_cache
         instance.create();
+        
+        #vmMap = {instance.uuid:"vm-2519"}
+        result = self.compute_api.manage_vmware_vms(context2, computeNode,intanceUuid=instance.uuid,vmMorVal="vm-2523")
+        
         return {}
         
 
