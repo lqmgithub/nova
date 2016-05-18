@@ -6696,6 +6696,9 @@ class ComputeManager(manager.Manager):
     def get_vmware_vms(self,context):
         return self.driver.get_vmware_vms(context)
     
+    def get_vmware_vminfo(self,context,vm_ref):
+        return self.driver.get_vmware_vminfo(context,vm_ref)
+    
     def manage_vmware_vms(self,context,intanceUuid,vmMorVal):
         return self.driver.manage_vmware_vms(context,intanceUuid,vmMorVal) 
 
@@ -7011,6 +7014,9 @@ class _ComputeV4Proxy(object):
     
     def get_vmware_vms(self,ctxt):
         return self.manager.get_vmware_vms(ctxt)
+    
+    def get_vmware_vminfo(self,ctxt,vm_ref):
+        return self.manager.get_vmware_vminfo(ctxt,vm_ref)
     
     def manage_vmware_vms(self,ctxt,intanceUuid,vmMorVal):
         return self.manager.manage_vmware_vms(ctxt,intanceUuid,vmMorVal) 

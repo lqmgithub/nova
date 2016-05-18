@@ -1520,7 +1520,10 @@ class API(base.Base):
 
     def get_vmware_vms(self,context,computeNode):
         return self.compute_rpcapi.get_vmware_vms(context,computeNode)
-      
+     
+    def get_vmware_vminfo(self,context,computeNode,vm_ref):
+        return self.compute_rpcapi.get_vmware_vminfo(context,computeNode,vm_ref)
+         
     def manage_vmware_vms(self,context,computeNode,intanceUuid,vmMorVal):
         return self.compute_rpcapi.manage_vmware_vms(context,computeNode,intanceUuid,vmMorVal)  
 

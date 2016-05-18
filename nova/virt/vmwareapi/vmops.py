@@ -33,6 +33,7 @@ from oslo_utils import units
 from oslo_utils import uuidutils
 from oslo_vmware import exceptions as vexc
 from oslo_vmware.objects import datastore as ds_obj
+from oslo_vmware import vim_util as vutil
 
 from nova.api.metadata import base as instance_metadata
 from nova import compute
@@ -861,7 +862,9 @@ class VMwareVMOps(object):
 #         result = self._session.invoke_api(vim_util, "get_objects", self._session._vim,
 #                                           #"VirtualMachine",1, ['guest','summary','config.hardware.numCoresPerSocket','config.hardware.numCPU','config.hardware.memoryMB'])
 #                                           "VirtualMachine",1, ['name'])
-        result = self._session._call_method(vim_util, "get_objects","VirtualMachine", ['name'],False)
+        result = self._session._call_method(vim_util, "get_objects","VirtualMachine", ['name','runtime.powerState','summary.guest.hostName','config.hardware.numCoresPerSocket',
+                                                                                       'config.hardware.numCPU','config.hardware.memoryMB',
+                                                                                       'summary.storage.committed','summary.storage.uncommitted','config.managedBy.extensionKey'],False)
         
         while result:
             #print result
@@ -869,7 +872,6 @@ class VMwareVMOps(object):
             vmJsonList = buildList(result)
             vmlist.extend(vmJsonList)
             #print vmJsonList
-            print "*********************###%d" %vmlist.__len__()
 #            result = session.invoke_api(vim_util, "continue_retrieval", self._session.vim,result)
             if token:
                 result = self._session._call_method(vim_util,
@@ -877,8 +879,37 @@ class VMwareVMOps(object):
                                           token)
             else:
                break;
-        print "**********************%d" %vmlist.__len__()
         return {"vms":vmlist}
+    
+    def get_vmware_vminfo(self,context,vmref):
+        vm_ref = self._session.invoke_api(vutil, "get_moref",vmref,"VirtualMachine")
+        lst_properties = ["config.hardware.device",'name','runtime.powerState','summary.guest.hostName',
+                          'config.hardware.numCoresPerSocket','config.hardware.numCPU','config.hardware.memoryMB',
+                         'summary.storage.committed','summary.storage.uncommitted','config.managedBy.extensionKey']
+        result = self._session.invoke_api(vutil, "get_object_properties_dict",self._session.vim,vm_ref,lst_properties)
+        
+        nicDevice = ( "suds.sudsobject.VirtualE1000","suds.sudsobject.VirtualE1000e","suds.sudsobject.VirtualPCNet32","suds.sudsobject.VirtualVmxnet");
+        for k,v in result.items() :
+            if k == "config.hardware.device":
+                disk = []
+                nic = []
+                for vd in v.VirtualDevice:
+                    print vd.__class__,str(vd.__class__)
+                    if str(vd.__class__) == "suds.sudsobject.VirtualDisk":
+                        diskvo =  {"label":vd.deviceInfo.label,
+                         'capacityInKB':vd.capacityInKB
+                        }
+                        disk.append(diskvo)
+                        
+                    if str(vd.__class__) in nicDevice:
+                        ethvo =  {"label":vd.deviceInfo.label,
+                                   'summary':vd.deviceInfo.summary,
+                                   'macAddress':vd.macAddress
+                                   }
+                        nic.append(ethvo)
+                result[k] = {"disk":disk,"nic":nic}
+        return result
+    
     
     def manage_vmware_vms(self, context,intanceUuid,vmMorVal):
         client_factory = self._session.vim.client.factory

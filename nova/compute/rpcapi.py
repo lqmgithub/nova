@@ -1081,6 +1081,12 @@ class ComputeAPI(object):
                 version=version)
         return cctxt.call(ctxt, 'get_vmware_vms')
     
+    def get_vmware_vminfo(self,ctxt,computeNode,vm_ref):
+        version = self._compat_ver('4.0', '3.0')
+        cctxt = self.client.prepare(server=_compute_host(computeNode, None),
+                version=version)
+        return cctxt.call(ctxt, 'get_vmware_vminfo',vm_ref=vm_ref)
+    
     def manage_vmware_vms(self,ctxt,computeNode,intanceUuid,vmMorVal):
         version = self._compat_ver('4.0', '3.0')
         cctxt = self.client.prepare(server=_compute_host(computeNode, None),

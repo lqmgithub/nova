@@ -644,6 +644,9 @@ class VMwareVCDriver(driver.ComputeDriver):
     
     def get_vmware_vms(self,context):
         return self._vmops.get_vmware_vms(context)
+    
+    def get_vmware_vminfo(self,context,vm_ref):
+        return self._vmops.get_vmware_vminfo(context,vm_ref)
    
     def manage_vmware_vms(self,context,intanceUuid,vmMorVal):
         return self._vmops.manage_vmware_vms(context,intanceUuid,vmMorVal)

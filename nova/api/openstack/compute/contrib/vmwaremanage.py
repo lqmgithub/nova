@@ -22,81 +22,54 @@ from nova import compute
 from oslo_vmware import api
 from oslo_vmware import vim_util
 from nova.network import model as network_model
-from nova.compute import flavors
+from nova.compute import flavors, power_state, vm_states
 import datetime
 
 documents = {"documents":[{"id":"1001", "name":"docs1"},
                                      {"id":"1002", "name":"docs2"},
                                      {"id":"1003", "name":"docs3"}]}
 
+powerStateMap = {"poweredOff":power_state.SHUTDOWN,"poweredOn":power_state.RUNNING,"suspended":power_state.SUSPENDED}
+vmStateMap = {"poweredOff":vm_states.STOPPED,"poweredOn":vm_states.ACTIVE,"suspended":vm_states.SUSPENDED}
+
 class VmwaremanageController(object):
-    """The Hosts API controller for the OpenStack API."""
+    """The VMware management API controller for the OpenStack API."""
     def __init__(self):
         super(VmwaremanageController, self).__init__()
         self.compute_api = compute.API()
 
 
     def index(self, req):
-        '''
-        GET v2/{tenant_id}/os-vmwaremanage
-        '''
+        '''GET v2/{tenant_id}/os-vmwaremanage'''
         context = req.environ['nova.context']
         computeNode = req.GET["cnode"];
+        
+#         _context = context.to_dict()
+#         userid = _context.get("user_id")
+#         projectid = _context.get("project_id")
+#         projectid = _context.get("user_domain")
+#         for k,v in _context.items():
+#             print k,v
+#         return _context
+
         #computeNode="localhost.localdomain"
         result = self.compute_api.get_vmware_vms(context, computeNode)
         return result
         
-#         # Get a handle to a vSphere API session
-#         session = api.VMwareAPISession(
-#             '192.168.103.110',      # vSphere host endpoint
-#             'root', # vSphere username
-#             'root123',      # vSphere password
-#             10,              # Number of retries for connection failures in tasks
-#             0.1              # Poll interval for async tasks (in seconds)
-#         )
-# 
-#       
-#         vmlist = []
-#         def buildList(result):
-#             for obj in result.objects:
-#                 if not hasattr(obj, 'propSet'):
-#                     continue
-#                 property_dict = {}
-#                 property_dict[obj.obj._type]=obj.obj.value
-#                 dynamic_properties = obj.propSet
-#                 if dynamic_properties:
-#                     for prop in dynamic_properties:
-#                         property_dict[prop.name] = prop.val
-#                 return property_dict;
-# 
-#         result = session.invoke_api(vim_util, "get_objects", session.vim,
-#                                           #"VirtualMachine",1, ['guest','summary','config.hardware.numCoresPerSocket','config.hardware.numCPU','config.hardware.memoryMB'])
-#                                           "VirtualMachine",1, ['name'])
-#         while result:
-#            print result
-#            vmjson = buildList(result)
-#            vmlist.append(vmjson)
-#            result = session.invoke_api(vim_util, "continue_retrieval", session.vim,result)
-#         session.logout();
-#         return {"vms":vmlist}
 
     def show(self, req, id):
         '''
-        GET v2/{tenant_id}/ os-documents/{document_id}
+        GET v2/{tenant_id}/ os-vmwaremanage/{vm_ref}
 
         '''
-        document = None
-        for docu in  documents["documents"]:
-            if docu["id"] == id:
-                 document = docu                    
-        if document == None:
-             raise webob.exc.HTTPNotFound(explanation="Document not found")
-        else:
-             return document
+        context = req.environ['nova.context']
+        computeNode = req.GET["cnode"];
+        result = self.compute_api.get_vmware_vminfo(context, computeNode,id)
+        return result
     
     def create(self, req, body):
         '''
-        POST v2/{tenant_id}/os-documents 
+        POST v2/{tenant_id}/os-vmwaremanage 
         '''
 #         
 #         kwargs = {
@@ -113,26 +86,50 @@ class VmwaremanageController(object):
 #         
 #         flavor = objects.Flavor(context=context.get_admin_context(), **kwargs)
 #         flavor.create()
+
         computeNode = req.GET["cnode"];
         context2 = req.environ['nova.context']
+        _context = context2.to_dict()
+        userid = _context.get("user_id")
+        projectid = _context.get("project_id")
+        
+        
+        vm_ref = body["vm_ref"]
+        vminfo = self.compute_api.get_vmware_vminfo(context2, computeNode,vm_ref)
+ 
+        
+        powerState = powerStateMap.get(vminfo.get("runtime.powerState"),power_state.NOSTATE)
+        vmState = vmStateMap.get(vminfo.get("runtime.powerState"),vm_states.ERROR);
+        hostname = vminfo.get("summary.guest.hostName")
+        vmName = vminfo.get("name")
+        memoryMB = vminfo.get("config.hardware.memoryMB")
+        numCoresPerSocket = vminfo.get("config.hardware.numCoresPerSocket")
+        numCPU = vminfo.get("config.hardware.numCPU")
+        vcpus = int(numCoresPerSocket)*int(numCPU)
+         
+        devcieVo = vminfo.get("config.hardware.device") 
+        rootGb = 0l
+        for diskvo in devcieVo.get("disk"):
+            rootGb = rootGb + diskvo.get("capacityInKB",0)
+        rootGb = rootGb/1024/1024
+        
         info_cache = objects.InstanceInfoCache()
         info_cache.network_info = network_model.NetworkInfo()
         _get_inst_type = flavors.get_flavor_by_flavor_id
         inst_type = _get_inst_type(451, ctxt=context.get_admin_context(),
                                        read_deleted="no")
-        
         kwargs = {
-            'user_id': "e4158f2557eb4b828df9a9e5cd05633c",
-            'project_id': "83d5b3142395412c99078708f1f82895",  
-            'power_state': 1,
-            'vm_state': "active",
-            'hostname':"addtest",
-            'host':"localhost.localdomain",
-            'display_name': "qmtest3",
-            'launched_on':"localhost.localdomain",
-             'memory_mb': 1024,
-             'vcpus': 2,
-             'root_gb': 0,
+            'user_id': userid,
+            'project_id': projectid,  
+            'power_state': powerState,
+            'vm_state': vmState,
+            'hostname':hostname,
+            'host':computeNode,
+            'display_name': vmName,
+            'launched_on':computeNode,
+             'memory_mb': memoryMB,
+             'vcpus': vcpus,
+             'root_gb': rootGb,
              'ephemeral_gb': 0,
              'availability_zone': 'nova',
              'node':'domain-c2516(poolwudong)',
@@ -146,7 +143,7 @@ class VmwaremanageController(object):
         instance.create();
         
         #vmMap = {instance.uuid:"vm-2519"}
-        result = self.compute_api.manage_vmware_vms(context2, computeNode,intanceUuid=instance.uuid,vmMorVal="vm-2523")
+        result = self.compute_api.manage_vmware_vms(context2, computeNode,intanceUuid=instance.uuid,vmMorVal=vm_ref)
         
         return {}
         
