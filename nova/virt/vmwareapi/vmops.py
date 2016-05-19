@@ -929,7 +929,7 @@ class VMwareVMOps(object):
         vnc_config_spec = vm_util.get_vnc_config_spec(client_factory, port)
         vm_util.reconfigure_vm(self._session, vm_ref, vnc_config_spec)
         
-        return {}
+        return {"state":"success"}
 
     def reboot(self, instance, network_info, reboot_type="SOFT"):
         """Reboot a VM instance."""

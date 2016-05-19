@@ -24,6 +24,7 @@ from oslo_vmware import vim_util
 from nova.network import model as network_model
 from nova.compute import flavors, power_state, vm_states
 import datetime
+import uuid
 
 documents = {"documents":[{"id":"1001", "name":"docs1"},
                                      {"id":"1002", "name":"docs2"},
@@ -113,10 +114,34 @@ class VmwaremanageController(object):
             rootGb = rootGb + diskvo.get("capacityInKB",0)
         rootGb = rootGb/1024/1024
         
+        limited_flavors = flavors.get_all_flavors_sorted_list(context2,{'is_public':True})
+        
+        
+        matchFlavor = None
+        for flavor in limited_flavors:
+            if  long(flavor.get("memory_mb")) == memoryMB  and  long(flavor.get("vcpus")) == vcpus  and long(flavor.get("root_gb")) == rootGb :
+                matchFlavor = flavor
+                break
+        
+        if not matchFlavor:
+            flavorKwargs = {
+                'memory_mb': memoryMB,
+                'vcpus': vcpus,
+                'root_gb': rootGb,
+                'ephemeral_gb': 0,
+                'swap': 0,
+                'name':vmName,
+                'flavorid':str(uuid.uuid4())
+            }
+            flavor = objects.Flavor(context=context2, **flavorKwargs)
+            flavor.create()
+            matchFlavor = flavor
+       
+        
         info_cache = objects.InstanceInfoCache()
         info_cache.network_info = network_model.NetworkInfo()
         _get_inst_type = flavors.get_flavor_by_flavor_id
-        inst_type = _get_inst_type(451, ctxt=context.get_admin_context(),
+        inst_type = _get_inst_type(matchFlavor.flavorid, ctxt=context2,
                                        read_deleted="no")
         kwargs = {
             'user_id': userid,
@@ -138,14 +163,14 @@ class VmwaremanageController(object):
             'flavor':inst_type
         }
         
-        instance = objects.Instance(context.get_admin_context(), **kwargs)
+        instance = objects.Instance(context2, **kwargs)
       
         instance.create();
         
         #vmMap = {instance.uuid:"vm-2519"}
         result = self.compute_api.manage_vmware_vms(context2, computeNode,intanceUuid=instance.uuid,vmMorVal=vm_ref)
         
-        return {}
+        return result
         
 
     def update(self, req, body, id):
