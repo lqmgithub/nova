@@ -88,14 +88,18 @@ class VmwaremanageController(object):
 #         flavor = objects.Flavor(context=context.get_admin_context(), **kwargs)
 #         flavor.create()
 
-        computeNode = req.GET["cnode"];
-        context2 = req.environ['nova.context']
+        context2 = req.environ['nova.context'] 
         _context = context2.to_dict()
         userid = _context.get("user_id")
         projectid = _context.get("project_id")
         
         
         vm_ref = body["vm_ref"]
+        availability_zone = body["zone"]
+        node = body["hynode"]
+        computeNode = body["cnode"];
+        
+        
         vminfo = self.compute_api.get_vmware_vminfo(context2, computeNode,vm_ref)
  
         
@@ -156,8 +160,8 @@ class VmwaremanageController(object):
              'vcpus': vcpus,
              'root_gb': rootGb,
              'ephemeral_gb': 0,
-             'availability_zone': 'nova',
-             'node':'domain-c2516(poolwudong)',
+             'availability_zone': availability_zone,
+             'node':node,
              'launched_at':datetime.datetime.now(),
             'info_cache':info_cache,
             'flavor':inst_type
